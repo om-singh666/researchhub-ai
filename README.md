@@ -1,11 +1,16 @@
 # ResearchHub AI
 
-ResearchHub AI is a full-stack research paper management and analysis platform built with FastAPI and React. It supports JWT authentication, workspace-based paper organization, paper discovery, and AI-assisted research chat using a Groq-compatible backend flow.
+ResearchHub AI is a full-stack research paper management and analysis platform built with FastAPI and React. It supports workspace-based paper organization, paper discovery, and AI-assisted research chat using a Groq-compatible backend flow.
+
+## Live Links
+
+- Live Demo: https://om-singh666.github.io/researchhub-ai/
+- GitHub Repository: https://github.com/om-singh666/researchhub-ai
 
 ## Tech Stack
 
 - Frontend: React, TypeScript, Vite, Tailwind CSS
-- Backend: FastAPI, SQLAlchemy, JWT auth, sentence-transformers
+- Backend: FastAPI, SQLAlchemy, sentence-transformers
 - AI: Groq Llama 3.3 70B compatible service wrapper
 - Database: SQLite by default
 
@@ -34,6 +39,8 @@ npm run dev
 ```
 
 The frontend runs on `http://localhost:3000` and talks to the backend at `http://localhost:8000`.
+
+The public GitHub Pages deployment runs in demo mode with no login required, so the project can be opened and tested instantly.
 
 ## Environment Variables
 
