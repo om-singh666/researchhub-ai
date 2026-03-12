@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { askWorkspace, getWorkspacePapers, type Paper } from "../lib/api";
-import { useAuth } from "../hooks/useAuth";
 
 type ConversationEntry = {
   role: "user" | "assistant";
@@ -11,26 +10,25 @@ type ConversationEntry = {
 
 export function WorkspacePage() {
   const { workspaceId = "" } = useParams();
-  const { token } = useAuth();
   const [papers, setPapers] = useState<Paper[]>([]);
   const [prompt, setPrompt] = useState("");
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!token || !workspaceId) return;
-    getWorkspacePapers(token, workspaceId).then(setPapers).catch(() => undefined);
-  }, [token, workspaceId]);
+    if (!workspaceId) return;
+    getWorkspacePapers(workspaceId).then(setPapers).catch(() => undefined);
+  }, [workspaceId]);
 
   async function handleAsk(event: React.FormEvent) {
     event.preventDefault();
-    if (!token || !workspaceId || !prompt.trim()) return;
+    if (!workspaceId || !prompt.trim()) return;
     const question = prompt;
     setPrompt("");
     setConversation((current) => [...current, { role: "user", content: question }]);
     setLoading(true);
     try {
-      const response = await askWorkspace(token, workspaceId, question);
+      const response = await askWorkspace(workspaceId, question);
       setConversation((current) => [
         ...current,
         {

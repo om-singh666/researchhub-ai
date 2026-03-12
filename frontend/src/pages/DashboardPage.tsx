@@ -8,10 +8,8 @@ import {
   type SearchResult,
   type Workspace,
 } from "../lib/api";
-import { useAuth } from "../hooks/useAuth";
 
 export function DashboardPage() {
-  const { token } = useAuth();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -22,14 +20,12 @@ export function DashboardPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!token) return;
-    getWorkspaces(token).then(setWorkspaces).catch(() => undefined);
-  }, [token]);
+    getWorkspaces().then(setWorkspaces).catch(() => undefined);
+  }, []);
 
   async function handleCreateWorkspace(event: React.FormEvent) {
     event.preventDefault();
-    if (!token) return;
-    const workspace = await createWorkspace(token, {
+    const workspace = await createWorkspace({
       name: workspaceName,
       description: workspaceDescription,
     });
@@ -41,11 +37,11 @@ export function DashboardPage() {
 
   async function handleSearch(event: React.FormEvent) {
     event.preventDefault();
-    if (!token || !query.trim()) return;
+    if (!query.trim()) return;
     setLoading(true);
     setMessage("");
     try {
-      const papers = await searchPapers(token, query);
+      const papers = await searchPapers(query);
       setResults(papers);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Search failed");
@@ -55,11 +51,11 @@ export function DashboardPage() {
   }
 
   async function handleImport(result: SearchResult) {
-    if (!token || !selectedWorkspace) {
+    if (!selectedWorkspace) {
       setMessage("Create or select a workspace before importing a paper.");
       return;
     }
-    await importPaper(token, selectedWorkspace, result);
+    await importPaper(selectedWorkspace, result);
     setMessage(`Imported "${result.title}" successfully.`);
   }
 

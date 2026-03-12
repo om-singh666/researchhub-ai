@@ -2,20 +2,15 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.models import Paper, User, Workspace
+from app.models.models import Paper, Workspace
 from app.schemas.workspace import SearchResult
-from app.services.auth import get_current_user
 from app.services.search import search_arxiv
 
 router = APIRouter(prefix="/search", tags=["search"])
 
 
 @router.get("", response_model=list[SearchResult])
-async def search_papers(
-    q: str = Query(..., min_length=2),
-    current_user: User = Depends(get_current_user),
-):
-    _ = current_user
+async def search_papers(q: str = Query(..., min_length=2)):
     return await search_arxiv(q)
 
 
@@ -24,13 +19,8 @@ async def import_paper(
     workspace_id: int,
     paper: SearchResult,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    workspace = (
-        db.query(Workspace)
-        .filter(Workspace.id == workspace_id, Workspace.owner_id == current_user.id)
-        .first()
-    )
+    workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
     if workspace is None:
         from fastapi import HTTPException
 

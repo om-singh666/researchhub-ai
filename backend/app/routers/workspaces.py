@@ -4,24 +4,22 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.models import Paper, User, Workspace
 from app.schemas.workspace import PaperCreate, PaperRead, WorkspaceCreate, WorkspaceRead
-from app.services.auth import get_current_user
+from app.services.public_access import get_or_create_public_user
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
 
 @router.get("", response_model=list[WorkspaceRead])
-def list_workspaces(
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
-):
-    return db.query(Workspace).filter(Workspace.owner_id == current_user.id).all()
+def list_workspaces(db: Session = Depends(get_db)):
+    return db.query(Workspace).order_by(Workspace.created_at.desc()).all()
 
 
 @router.post("", response_model=WorkspaceRead)
 def create_workspace(
     payload: WorkspaceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
+    current_user = get_or_create_public_user(db)
     workspace = Workspace(
         name=payload.name, description=payload.description, owner_id=current_user.id
     )
@@ -35,9 +33,8 @@ def create_workspace(
 def list_papers(
     workspace_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    workspace = _get_workspace(db, workspace_id, current_user.id)
+    workspace = _get_workspace(db, workspace_id)
     return workspace.papers
 
 
@@ -46,9 +43,8 @@ def add_paper(
     workspace_id: int,
     payload: PaperCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    _get_workspace(db, workspace_id, current_user.id)
+    _get_workspace(db, workspace_id)
     paper = Paper(workspace_id=workspace_id, **payload.model_dump())
     db.add(paper)
     db.commit()
@@ -56,12 +52,8 @@ def add_paper(
     return paper
 
 
-def _get_workspace(db: Session, workspace_id: int, user_id: int) -> Workspace:
-    workspace = (
-        db.query(Workspace)
-        .filter(Workspace.id == workspace_id, Workspace.owner_id == user_id)
-        .first()
-    )
+def _get_workspace(db: Session, workspace_id: int) -> Workspace:
+    workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
     return workspace

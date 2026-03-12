@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routers import auth, chat, search, workspaces
+from app.routers import chat, search, workspaces
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,7 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
 app.include_router(workspaces.router)
 app.include_router(search.router)
 app.include_router(chat.router)

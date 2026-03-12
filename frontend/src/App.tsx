@@ -1,17 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { DashboardPage } from "./pages/DashboardPage";
-import { LoginPage } from "./pages/LoginPage";
 import { WorkspacePage } from "./pages/WorkspacePage";
-import { useAuth } from "./hooks/useAuth";
 
 export default function App() {
-  const { token } = useAuth();
-
-  if (!token) {
-    return <LoginPage />;
-  }
-
   return (
     <AppShell>
       <Routes>

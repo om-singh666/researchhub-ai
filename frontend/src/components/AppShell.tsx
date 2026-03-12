@@ -1,10 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
 
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation();
-  const { logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-sand text-ink">
@@ -21,12 +19,6 @@ export function AppShell({ children }: PropsWithChildren) {
             >
               Dashboard
             </Link>
-            <button
-              onClick={logout}
-              className="rounded-full bg-coral px-4 py-2 text-sm font-medium text-white"
-            >
-              Logout
-            </button>
           </div>
         </div>
       </header>

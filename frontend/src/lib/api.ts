@@ -21,18 +21,16 @@ export type SearchResult = Omit<Paper, "id">;
 
 type RequestOptions = {
   method?: string;
-  token?: string | null;
   body?: unknown;
 };
 
 type DemoDb = {
-  users: Array<{ id: number; name: string; email: string; password: string }>;
-  workspaces: Array<Workspace & { ownerId: number }>;
+  workspaces: Workspace[];
   papers: Array<Paper & { workspace_id: number }>;
 };
 
 function getDemoDb(): DemoDb {
-  const initialState: DemoDb = { users: [], workspaces: [], papers: [] };
+  const initialState: DemoDb = { workspaces: [], papers: [] };
   const stored = localStorage.getItem(DEMO_KEY);
   if (!stored) return initialState;
   try {
@@ -44,11 +42,6 @@ function getDemoDb(): DemoDb {
 
 function saveDemoDb(db: DemoDb) {
   localStorage.setItem(DEMO_KEY, JSON.stringify(db));
-}
-
-function getDemoUserId(token?: string | null) {
-  if (!token?.startsWith("demo-token-")) return null;
-  return Number(token.replace("demo-token-", ""));
 }
 
 function getId(items: Array<{ id: number }>) {
@@ -65,7 +58,6 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       method: options.method ?? "GET",
       headers: {
         "Content-Type": "application/json",
-        ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
@@ -85,40 +77,9 @@ async function demoRequest<T>(path: string, options: RequestOptions): Promise<T>
   const db = getDemoDb();
   const method = options.method ?? "GET";
   const body = options.body as Record<string, string> | undefined;
-  const userId = getDemoUserId(options.token);
-
-  if (path === "/auth/register" && method === "POST" && body) {
-    const existing = db.users.find((user) => user.email === body.email);
-    if (existing) {
-      throw new Error("Email already registered");
-    }
-    const newUser = {
-      id: getId(db.users),
-      name: body.name,
-      email: body.email,
-      password: body.password,
-    };
-    db.users.push(newUser);
-    saveDemoDb(db);
-    return { access_token: `demo-token-${newUser.id}` } as T;
-  }
-
-  if (path === "/auth/login" && method === "POST" && body) {
-    const user = db.users.find(
-      (item) => item.email === body.email && item.password === body.password,
-    );
-    if (!user) {
-      throw new Error("Invalid email or password");
-    }
-    return { access_token: `demo-token-${user.id}` } as T;
-  }
-
-  if (!userId) {
-    throw new Error("Demo mode authentication missing");
-  }
 
   if (path === "/workspaces" && method === "GET") {
-    return db.workspaces.filter((workspace) => workspace.ownerId === userId) as T;
+    return db.workspaces as T;
   }
 
   if (path === "/workspaces" && method === "POST" && body) {
@@ -126,7 +87,6 @@ async function demoRequest<T>(path: string, options: RequestOptions): Promise<T>
       id: getId(db.workspaces),
       name: body.name,
       description: body.description,
-      ownerId: userId,
     };
     db.workspaces.push(workspace);
     saveDemoDb(db);
@@ -223,59 +183,32 @@ function toTitleCase(value: string) {
     .join(" ");
 }
 
-export async function register(payload: {
-  name: string;
-  email: string;
-  password: string;
-}) {
-  return request<{ access_token: string }>("/auth/register", {
-    method: "POST",
-    body: payload,
-  });
+export async function getWorkspaces() {
+  return request<Workspace[]>("/workspaces");
 }
 
-export async function login(payload: { email: string; password: string }) {
-  return request<{ access_token: string }>("/auth/login", {
-    method: "POST",
-    body: payload,
-  });
+export async function createWorkspace(payload: { name: string; description: string }) {
+  return request<Workspace>("/workspaces", { method: "POST", body: payload });
 }
 
-export async function getWorkspaces(token: string) {
-  return request<Workspace[]>("/workspaces", { token });
+export async function searchPapers(query: string) {
+  return request<SearchResult[]>(`/search?q=${encodeURIComponent(query)}`);
 }
 
-export async function createWorkspace(
-  token: string,
-  payload: { name: string; description: string },
-) {
-  return request<Workspace>("/workspaces", { method: "POST", token, body: payload });
-}
-
-export async function searchPapers(token: string, query: string) {
-  return request<SearchResult[]>(`/search?q=${encodeURIComponent(query)}`, { token });
-}
-
-export async function importPaper(
-  token: string,
-  workspaceId: number,
-  paper: SearchResult,
-) {
+export async function importPaper(workspaceId: number, paper: SearchResult) {
   return request<SearchResult>(`/search/import/${workspaceId}`, {
     method: "POST",
-    token,
     body: paper,
   });
 }
 
-export async function getWorkspacePapers(token: string, workspaceId: string) {
-  return request<Paper[]>(`/workspaces/${workspaceId}/papers`, { token });
+export async function getWorkspacePapers(workspaceId: string) {
+  return request<Paper[]>(`/workspaces/${workspaceId}/papers`);
 }
 
-export async function askWorkspace(token: string, workspaceId: string, message: string) {
+export async function askWorkspace(workspaceId: string, message: string) {
   return request<{ answer: string; citations: string[] }>(`/chat/${workspaceId}`, {
     method: "POST",
-    token,
     body: { message },
   });
 }

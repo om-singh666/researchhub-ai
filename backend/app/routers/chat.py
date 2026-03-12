@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.models import ChatMessage, User, Workspace
+from app.models.models import ChatMessage, Workspace
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.services.auth import get_current_user
 from app.services.research_ai import generate_answer
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -15,13 +14,8 @@ def chat_with_workspace(
     workspace_id: int,
     payload: ChatRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    workspace = (
-        db.query(Workspace)
-        .filter(Workspace.id == workspace_id, Workspace.owner_id == current_user.id)
-        .first()
-    )
+    workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
 
