@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: researchhub-ai
+    env: python
+    rootDir: .
+    buildCommand: cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./researchhub.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        value: "*"
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
